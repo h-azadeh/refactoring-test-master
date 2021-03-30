@@ -4,6 +4,12 @@ namespace LegacyApp
 {
     public class UserService
     {
+        private readonly ClientRepository _clientRepository;
+        public UserService()
+        {
+            _clientRepository = new ClientRepository();
+        }
+
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
             if (string.IsNullOrEmpty(firname) || string.IsNullOrEmpty(surname))
@@ -19,21 +25,18 @@ namespace LegacyApp
             if (CalculateAge(dateOfBirth) < 21)
             {
                 return false;
-            }
-
-            var clientRepository = new ClientRepository();
-            var client = clientRepository.GetById(clientId);
+            }                                
             
             var user = new User
             {
-                Client = client,
+                Client = _clientRepository.GetById(clientId),
                 DateOfBirth = dateOfBirth,
                 EmailAddress = email,
                 Firstname = firname,
                 Surname = surname
             };
 
-            SetCreditLimit(user, client);
+            SetCreditLimit(user);
 
             if (user.HasCreditLimit && user.CreditLimit < 500)
             {
@@ -45,9 +48,9 @@ namespace LegacyApp
             return true;
         }
 
-        private void SetCreditLimit(User user, Client client)
+        private void SetCreditLimit(User user)
         {
-            if (client.Name == "VeryImportantClient")
+            if (user.Client.Name == "VeryImportantClient")
             {
                 // Skip credit check
                 user.HasCreditLimit = false;
@@ -60,7 +63,7 @@ namespace LegacyApp
                 {
                     var creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
 
-                    if (client.Name == "ImportantClient")
+                    if (user.Client.Name == "ImportantClient")
                         creditLimit = creditLimit * 2; //double credit limit
 
                     user.CreditLimit = creditLimit;
